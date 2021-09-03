@@ -1,0 +1,62 @@
+{% extends 'adminbase.html' %}
+
+
+{% block content %}
+
+
+
+<table class="table table-bordred table-striped">
+  <thead>
+    <tr>
+      <th>Titol</th>
+      <th>status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for page in list_pages %}
+      <tr>
+        {% if parent_slug|length > 0 %}
+        <td><a href="{% url 'edit.subpage' parent_slug=parent_slug page_slug=page.slug %}">{{ page.title }}</a></td>
+        {% else %}
+        <td><a href="{% url 'edit.page' page_slug=page.slug %}">{{ page.title }}</a></td>
+        {% endif %}
+        <td>{{ page.status }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+
+{% if list_pages.has_other_pages %}
+<hr/>
+<ul class="pagination d-flex justify-content-center">
+  {% if list_pages.has_previous %}
+    <li class="page-item"><a class="page-link" href="?page={{ list_pages.previous_page_number }}">&laquo;</a></li>
+  {% else %}
+    <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+  {% endif %}
+  {% for i in list_pages.paginator.page_range %}
+    {% if list_pages.number == i %}
+      <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+    {% else %}
+      <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+    {% endif %}
+  {% endfor %}
+  {% if list_pages.has_next %}
+    <li class="page-item"><a class="page-link" href="?page={{ list_pages.next_page_number }}">&raquo;</a></li>
+  {% else %}
+    <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+  {% endif %}
+</ul>
+{% endif %}
+
+{% if parent_slug|length > 0 %}
+<form style="display: inline;" action="{% url 'add.subpage' parent_slug=parent_slug %}" method="GET">
+{% else %}
+<form style="display: inline;" action="{% url 'add.page' %}" method="GET">
+{% endif %}
+<button class="float-left btn btn-info" style="margin: 3px;" type="submit"><i class="fas fa-plus"></i> pàgina</button>
+</form>
+
+{% endblock %}

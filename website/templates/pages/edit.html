@@ -1,0 +1,43 @@
+{% extends 'adminbase.html' %}
+
+{% block content %}
+
+<script src="{{ 'http://static.ampa.systemadmin.es/js/tinymce/tinymce.min.js' }}"></script>
+
+
+<script type="text/javascript">
+tinymce.init({
+    selector: '#id_html_message',
+    language: 'ca',
+    menubar: false,
+    plugins: "link image code lists image",
+    toolbar: 'styleselect | forecolor | bold italic | alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist | image link | undo redo | code',
+    height: '550'
+});
+</script>
+
+{% if parent_slug|length > 0 %}
+<a href="{% url 'list.pages' parent_slug=parent_slug%}"><i class="fas fa-backward"></i> llistat de pàgines</a>
+{% else %}
+<a href="{% url 'list.pages' %}"><i class="fas fa-backward"></i> llistat de pàgines</a>
+{% endif %}
+
+{% if parent_slug|length > 0 %}
+<form style="display: inline;" action="{% url 'add.subpage' parent_slug=page.slug %}" method="GET">
+{% else %}
+<form style="display: inline;" action="{% url 'add.page' %}" method="GET">
+  {% endif %}
+  <button class="float-right btn btn-primary" type="submit"><i class="fas fa-plus"></i> subpàgina</button>
+</form>
+
+<div class="py-4 px-4 px-md-3 px-lg-4">
+    <form class="home-hero-signup text-gray-dark js-signup-form js-signup-form-submit" method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <br>
+        <button class="btn btn-success" type="submit" name="guardar" >guardar</button>
+    </form>
+</div>
+
+{% endblock %}

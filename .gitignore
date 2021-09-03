@@ -1,0 +1,17 @@
+*.log
+*.xls
+*.xlsx
+.~lock.*.xlsx#
+*.pot
+*.py[cod]
+__pycache__/
+db.sqlite3
+db.sqlite3-journal
+.env
+sendgrid.env
+00template-*.yaml
+logo_cole.jpg
+tinymce/
+uploads/*/*
+website/preprod.sh
+website/prod.sh
