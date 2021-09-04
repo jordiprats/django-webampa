@@ -18,6 +18,11 @@ tinymce.init({
       {title: 'Thumbnail', value: 'img-thumbnail'},
       {title: 'Puntes arrodonides', value: 'img-rounded'},
       {title: 'Cercle', value: 'img-circle'}
+    ],
+    image_list: [
+    {% for filename, static_url in attachments.items %}
+      {title: '{{ filename }}', value: '{{ static_url }}'},
+    {% endfor %}
     ]
 });
 </script>
@@ -53,6 +58,7 @@ tinymce.init({
 
         <br>
         <button class="btn btn-success" type="submit" name="guardar" >guardar</button>
+        <button class="btn btn-info" type="submit" name="adjunts" >gestionar adjunts</button>
     </form>
 </div>
 

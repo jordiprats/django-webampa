@@ -15,3 +15,5 @@ tinymce/
 uploads/*/*
 website/preprod.sh
 website/prod.sh
+website/static/uploads/*
+!website/static/uploads/.gitkeep

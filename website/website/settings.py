@@ -119,6 +119,13 @@ AUTHENTICATION_BACKENDS = (
 LOGIN_URL = '/admin/login'
 LOGOUT_REDIRECT_URL = '/admin/login/'
 
+UPLOADS_URL = 'static/uploads'
+UPLOADS_ROOT = os.path.join(BASE_DIR, UPLOADS_URL)
+
+PROTOCOL = os.getenv('PROTOCOL', 'http')
+
+STATIC_DOMAIN = PROTOCOL + '://'+os.getenv('STATIC_HOSTNAME', 'static.ampalestonnacbcn.org')+'/'
+
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
 

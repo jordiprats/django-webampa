@@ -2,8 +2,42 @@
 
 {% block content %}
 
-<h1>{{ page.title }}</h1>
+{% if internal_nav %}
+<ul class="nav nav-tabs">
+  {% for title, url in internal_nav.items %}
+  <li class="nav-item">
+    {% if title == current_page %}
+    <a class="nav-link active" href="{{ url }}">{{ title }}</a>
+    {% else %}
+    <a class="nav-link" href="{{ url }}">{{ title }}</a>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<h1 class="py-3">{{ page.title }}</h1>
 
 {{ page.html_message | safe }}
+
+{% if page.show_gallery %}
+<div id="carouselExampleIndicators" class="carousel slide py-5" data-bs-ride="carousel">
+  <div class="carousel-inner">
+    {% for name, url in attachments.items %}
+    <div class="carousel-item">
+      <img src="{{ url }}" class="d-block w-100">
+    </div>
+    {% endfor %}
+  </div>
+  <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Anterior</span>
+  </button>
+  <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next">
+    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Següent</span>
+  </button>
+</div>
+{% endif %}
 
 {% endblock %}

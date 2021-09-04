@@ -1,0 +1,51 @@
+{% extends 'adminbase.html' %}
+
+{% block content %}
+
+{% if page.parent %}
+<a href="{% url 'edit.subpage' parent_slug=page.parent.slug page_slug=page.slug%}"><i class="fas fa-backward"></i> editar pàgina</a>
+{% else %}
+<a href="{% url 'edit.page' page_slug=page.slug%}"><i class="fas fa-backward"></i> editar pàgina</a>
+{% endif %}
+
+<br><br>
+
+<h1>Adjunts {{ page.title }}</h1>
+
+{% if attachments %}
+<ul>
+  {% for id, data in attachments.items %}
+  <li>
+    <a target="_blank" href="{% url 'attachments.to.url' attachment_id=id%}">{{ data }}</a>
+    <form style="display: inline" action="{% url 'attachment.delete' attachment_id=id%}" method="GET">
+      <button style="margin: 5px;" class="btn btn-danger" type="submit"><i class="fas fa-trash-alt"></i></button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+<hr>
+{% endif %}
+
+<form method="POST" enctype="multipart/form-data">
+  {% csrf_token %}
+
+  <ul>
+
+  <li>
+    <label for="file">Nom (opcional)</label>
+    <input type="text" name="name">
+  </li>
+  <li>
+    <label for="file">Fitxer a afegir</label>
+    <input type="file" name="attachment">
+  </li>
+
+  </ul>
+
+  <hr>
+
+  <button class="btn btn-info" type="submit" name="guardar" >Upload</button>
+</form>
+
+
+{% endblock %}
