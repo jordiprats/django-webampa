@@ -22,14 +22,22 @@ tinymce.init({
 <a href="{% url 'list.pages' %}"><i class="fas fa-backward"></i> llistat de pàgines</a>
 {% endif %}
 
-<form style="display: inline;" action="{% url 'add.subpage' parent_slug=page.slug %}" method="GET">
-  <button style="margin-right: 10px;" class="float-right btn btn-danger" type="submit"><i class="fas fa-trash-alt"></i> eliminar</button>
-</form>
+{% if page.slug %}
+<div>
+  {% if parent_slug|length > 0 %}
+  <form style="display: inline;" action="{% url 'delete.subpage' parent_slug=parent_slug page_slug=page.slug %}" method="GET">
+  {% else %}
+  <form style="display: inline;" action="{% url 'delete.page' page_slug=page.slug %}" method="GET">
+  {% endif %}
+    <button style="margin-right: 10px;" class="float-right btn btn-danger" type="submit"><i class="fas fa-trash-alt"></i> eliminar</button>
+  </form>
 
-{% if parent_slug|length == 0 %}
-<form style="display: inline;" action="{% url 'add.subpage' parent_slug=page.slug %}" method="GET">
-  <button style="margin-right: 10px;" class="float-right btn btn-primary" type="submit"><i class="fas fa-plus"></i> subpàgina</button>
-</form>
+  {% if parent_slug|length == 0 %}
+  <form style="display: inline;" action="{% url 'add.subpage' parent_slug=page.slug %}" method="GET">
+    <button style="margin-right: 10px;" class="float-right btn btn-primary" type="submit"><i class="fas fa-plus"></i> subpàgina</button>
+  </form>
+  {% endif %}
+</div>
 {% endif %}
 
 <div class="py-4 px-4 px-md-3 px-lg-4">

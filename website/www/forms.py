@@ -12,3 +12,6 @@ class PageForm(forms.ModelForm):
             'status': 'Estat',
             'html_message': 'Contingut',
         }
+
+class AreYouSureForm(forms.Form):
+    pass

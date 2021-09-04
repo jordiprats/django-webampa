@@ -127,6 +127,48 @@ def edit_page(request, parent_slug=None, page_slug=None):
       return redirect('list.pages')
 
 @login_required
+def delete_page(request, parent_slug=None, page_slug=None):
+  try:
+    if parent_slug:
+      page_instance = Page.objects.filter(parent__slug=parent_slug, slug=page_slug).first()
+    else:
+      page_instance = Page.objects.filter(slug=page_slug).first()
+
+    if request.method == 'POST':
+      form = AreYouSureForm(request.POST)
+      if form.is_valid():
+        page_instance.delete()
+        messages.info(request, 'Pàgina eliminada')
+        if parent_slug:
+          return redirect('list.subpages', parent_slug=parent_slug)
+        else:
+          return redirect('list.pages')
+      else:
+        messages.error(request, 'Formulari incorrecte')
+        return render(request, 'pages/delete.html', { 
+                                                    'form': form, 
+                                                    'page': page_instance, 
+                                                    'parent_slug': parent_slug,
+                                                 })
+    else:
+      form = AreYouSureForm()
+      return render(request, 'pages/delete.html', { 
+                                                  'form': form, 
+                                                  'page': page_instance, 
+                                                  'parent_slug': parent_slug,
+                                                })
+
+  except Exception as e:
+    if os.getenv('DEBUG', False):
+      print(str(e))
+    if request.user.is_superuser:
+      messages.error(request, str(e))
+    if parent_slug:
+      return redirect('list.subpages', parent_slug=parent_slug)
+    else:
+      return redirect('list.pages')
+
+@login_required
 def list_pages(request, parent_slug=None):
 
   if parent_slug:
