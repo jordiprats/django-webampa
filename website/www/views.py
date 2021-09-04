@@ -2,8 +2,8 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET
+from django.http import HttpResponse, Http404
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
 from django.contrib import messages
 from django.db.models import Q
 
@@ -64,6 +64,9 @@ def view_page(request, url=None):
   
   page_instance = Page.objects.filter(parent__slug=parent_slug, slug=page_slug, status=PAGE_STATUS_PUBLIC).first()
 
+  if not page_instance:
+    raise Http404("Aquesta pàgina no existeix")
+
   return render(request, 'pages/view.html', { 
                                               'page': page_instance,
                                               'root_nav': get_main_nav()
@@ -76,11 +79,12 @@ def home_admin(request, url=None):
 @login_required
 def edit_page(request, parent_slug=None, page_slug=None):
   try:
+    if parent_slug:
+      parent_instance = Page.objects.filter(slug=parent_slug).first()
     try:
       page_instance = Page.objects.filter(parent__slug=parent_slug, slug=page_slug).first()
     except:
       if parent_slug:
-        parent_instance = Page.objects.filter(slug=parent_slug).first()
         page_instance = Page(parent=parent_instance)
       else:
         page_instance = Page()
@@ -93,7 +97,10 @@ def edit_page(request, parent_slug=None, page_slug=None):
           page_instance.parent = parent_instance
         page_instance.save()
         messages.info(request, 'Pàgina guardada correctament')
-        return redirect('list.pages')
+        if parent_slug:
+          return redirect('list.subpages', parent_slug=parent_slug)
+        else:
+          return redirect('list.pages')
       else:
         messages.error(request, 'Formulari incorrecte')
         return render(request, 'pages/edit.html', { 
@@ -114,7 +121,10 @@ def edit_page(request, parent_slug=None, page_slug=None):
       print(str(e))
     if request.user.is_superuser:
       messages.error(request, str(e))
-    return redirect('list.pages', )
+    if parent_slug:
+      return redirect('list.subpages', parent_slug=parent_slug)
+    else:
+      return redirect('list.pages')
 
 @login_required
 def list_pages(request, parent_slug=None):

@@ -12,6 +12,24 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
 
+  <script>
+  var isDirty = false;
+  var msg = 'You haven\'t saved your changes.';
+
+  $(document).ready(function()
+  {
+    // Alert user about unsaved changes!
+    $(':input').change(function(){
+      if(!isDirty) isDirty = true;
+    });
+
+    window.onbeforeunload = function(){
+      if(isDirty) return msg;
+    };
+  });
+  </script>
+
+
     </head>
     <body>
         <!-- Responsive navbar-->
