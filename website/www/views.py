@@ -55,7 +55,7 @@ def robots_txt(request):
   return HttpResponse("\n".join(lines), content_type="text/plain")
 
 def get_main_nav():
-  list_root_pages = Page.objects.filter(parent=None, status=PAGE_STATUS_PUBLIC).filter(~Q(slug="ampa"))
+  list_root_pages = Page.objects.filter(is_blog=False, parent=None, status=PAGE_STATUS_PUBLIC).filter(~Q(slug="ampa"))
 
   nav = {}
   for page in list_root_pages:
@@ -91,9 +91,10 @@ def view_page(request, url=None):
     else:
       page_slug=url
   
-  page_instance = Page.objects.filter(parent__slug=parent_slug, slug=page_slug, status=PAGE_STATUS_PUBLIC).first()
+  page_instance = Page.objects.filter(is_blog=False, parent__slug=parent_slug, slug=page_slug, status=PAGE_STATUS_PUBLIC).first()
 
   if not page_instance:
+    # TODO: blog URL
     raise Http404("Aquesta pàgina no existeix")
 
   attachments = {}
@@ -144,9 +145,9 @@ def edit_page(request, parent_slug=None, page_slug=None):
   attachments = {}
   try:
     if parent_slug:
-      parent_instance = Page.objects.filter(slug=parent_slug).first()
+      parent_instance = Page.objects.filter(is_blog=False, slug=parent_slug).first()
     try:
-      page_instance = Page.objects.filter(parent__slug=parent_slug, slug=page_slug).first()
+      page_instance = Page.objects.filter(is_blog=False, parent__slug=parent_slug, slug=page_slug).first()
       for attachment in page_instance.attachments.all():
         if attachment.name:
           attachments[attachment.name] = attachment.static_url
@@ -211,9 +212,9 @@ def edit_page(request, parent_slug=None, page_slug=None):
 def delete_page(request, parent_slug=None, page_slug=None):
   try:
     if parent_slug:
-      page_instance = Page.objects.filter(parent__slug=parent_slug, slug=page_slug).first()
+      page_instance = Page.objects.filter(is_blog=False, parent__slug=parent_slug, slug=page_slug).first()
     else:
-      page_instance = Page.objects.filter(slug=page_slug).first()
+      page_instance = Page.objects.filter(is_blog=False, slug=page_slug).first()
 
     if request.method == 'POST':
       form = AreYouSureForm(request.POST)
@@ -253,9 +254,9 @@ def delete_page(request, parent_slug=None, page_slug=None):
 def list_pages(request, parent_slug=None):
 
   if parent_slug:
-    list_pages_raw = Page.objects.filter(parent__slug=parent_slug)
+    list_pages_raw = Page.objects.filter(is_blog=False, parent__slug=parent_slug)
   else:
-    list_pages_raw = Page.objects.filter(parent=None)
+    list_pages_raw = Page.objects.filter(is_blog=False, parent=None)
 
   page = request.GET.get('page', 1)
   paginator = Paginator(list_pages_raw, 10)
@@ -305,19 +306,16 @@ def remove_page_attachment(request, attachment_id=None):
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         print(exc_type, fname, exc_tb.tb_lineno)
         print(str(e))
-      if instance_mailing.classes.count() == 1:
-        return redirect('list.classe.mailings', classe_id=instance_mailing.classes.all()[0].id)
-      elif instance_mailing.curs:
-        return redirect('edit.curs.mailing', curs_id=instance_mailing.curs.id, mailing_id=instance_mailing.id)
-      else:
-        # TODO
-        return redirect('home')
+    if page_instance.parent:
+      return redirect('edit.subpage', parent_slug=page_instance.parent.slug, page_slug=page_instance.slug)
+    else:
+      return redirect('edit.page', page_slug=page_instance.slug)
 
 
 @login_required
 def page_attachments(request, parent_slug=None, page_slug=None):
   try:
-    page_instance = Page.objects.filter(parent__slug=parent_slug, slug=page_slug).first()
+    page_instance = Page.objects.filter(is_blog=False, parent__slug=parent_slug, slug=page_slug).first()
 
     attachments = {}
     for attachment in page_instance.attachments.all():

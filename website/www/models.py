@@ -48,6 +48,10 @@ class Page(models.Model):
   parent = models.ForeignKey('self', on_delete=models.CASCADE, default=None, blank=True, null=True, related_name='children_pages')
 
   show_gallery = models.BooleanField(default=False)
+  is_blog = models.BooleanField(default=False)
+
+  date = models.DateTimeField()
+  updated_at = models.DateTimeField(auto_now=True)
 
   def getURL(self):
     if self.parent:
