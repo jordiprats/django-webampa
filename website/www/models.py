@@ -50,7 +50,7 @@ class Page(models.Model):
   show_gallery = models.BooleanField(default=False)
   is_blog = models.BooleanField(default=False)
 
-  date = models.DateTimeField()
+  date = models.DateTimeField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)
 
   def getURL(self):

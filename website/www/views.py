@@ -55,7 +55,7 @@ def robots_txt(request):
   return HttpResponse("\n".join(lines), content_type="text/plain")
 
 def get_main_nav():
-  list_root_pages = Page.objects.filter(is_blog=False, parent=None, status=PAGE_STATUS_PUBLIC).filter(~Q(slug="ampa"))
+  list_root_pages = Page.objects.filter(is_blog=False, parent=None, status=PAGE_STATUS_PUBLIC).filter(~Q(slug=settings.ROOT_PAGE_SLUG))
 
   nav = {}
   for page in list_root_pages:
@@ -82,7 +82,7 @@ def view_page(request, url=None):
     print('view_page '+str(url))
   parent_slug=None
   if not url:
-    page_slug='ampa'
+    page_slug=settings.ROOT_PAGE_SLUG
   else:
     if '/' in url:
       components = url.split('/')

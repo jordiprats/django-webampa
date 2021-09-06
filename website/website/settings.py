@@ -145,3 +145,5 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = str(__file__)+'/static'
+
+ROOT_PAGE_SLUG = os.getenv('ROOT_PAGE_SLUG', 'ampa')
