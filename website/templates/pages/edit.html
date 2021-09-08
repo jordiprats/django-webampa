@@ -35,18 +35,32 @@ tinymce.init({
 
 {% if page.slug %}
 <div>
-  {% if parent_slug|length > 0 %}
+  {% if not page.is_post %}
+    {% if parent_slug|length > 0 %}
   <form style="display: inline;" action="{% url 'delete.subpage' parent_slug=parent_slug page_slug=page.slug %}" method="GET">
-  {% else %}
+    {% else %}
   <form style="display: inline;" action="{% url 'delete.page' page_slug=page.slug %}" method="GET">
+    {% endif %}
+  {% else %}
+  <form style="display: inline;" action="{% url 'delete.page' page_id=page.id page_slug=page.slug %}" method="GET">
   {% endif %}
     <button style="margin-right: 10px;" class="float-right btn btn-danger" type="submit"><i class="fas fa-trash-alt"></i> eliminar</button>
   </form>
 
-  {% if parent_slug|length == 0 %}
-  <form style="display: inline;" action="{% url 'add.subpage' parent_slug=page.slug %}" method="GET">
-    <button style="margin-right: 10px;" class="float-right btn btn-primary" type="submit"><i class="fas fa-plus"></i> subpàgina</button>
-  </form>
+  {% if not page.is_post %}
+    {% if parent_slug|length == 0 %}
+    <form style="display: inline;" action="{% url 'add.subpage' parent_slug=page.slug %}" method="GET">
+      <button style="margin-right: 10px;" class="float-right btn btn-primary" type="submit"><i class="fas fa-plus"></i> subpàgina</button>
+    </form>
+    {% endif %}
+
+    {% if parent_slug|length == 0 %}
+    <form style="display: inline;" action="{% url 'add.page.post' page_slug=page.slug %}" method="GET">
+    {% else %}
+    <form style="display: inline;" action="{% url 'add.subpage.post' parent_slug=parent_slug page_slug=page.slug %}" method="GET"></form>
+    {% endif %}
+      <button style="margin-right: 10px;" class="float-right btn btn-primary" type="submit"><i class="fas fa-plus"></i> post</button>
+    </form>
   {% endif %}
 </div>
 {% endif %}

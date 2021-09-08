@@ -47,15 +47,16 @@ class Page(models.Model):
 
   parent = models.ForeignKey('self', on_delete=models.CASCADE, default=None, blank=True, null=True, related_name='children_pages')
 
+  show_blog = models.BooleanField(default=False)
   show_gallery = models.BooleanField(default=False)
-  is_blog = models.BooleanField(default=False)
+  is_post = models.BooleanField(default=False)
 
-  date = models.DateTimeField(auto_now_add=True)
+  post_date = models.DateTimeField(default=None, blank=True, null=True, editable=True)
   updated_at = models.DateTimeField(auto_now=True)
 
   def getURL(self):
     if self.parent:
-      return "/"+self.parent.slug+"/"+self.slug
+      return self.parent.getURL()+"/"+self.slug
     else:
       return "/"+self.slug
 
@@ -68,6 +69,7 @@ class Page(models.Model):
     ordering = ['slug']
     indexes = [
         models.Index(fields=['parent', 'slug']),
+        models.Index(fields=['is_post', 'parent', '-post_date']),
     ]
 
 class FileAttachment(models.Model):

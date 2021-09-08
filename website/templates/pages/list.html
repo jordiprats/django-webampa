@@ -3,10 +3,18 @@
 
 {% block content %}
 
-
-{% if parent_slug|length > 0 %}
-<a href="{% url 'list.pages' %}"><i class="fas fa-backward"></i> llistat de pàgines</a>
-<br><br>
+{% if page_posts %}
+  {% if parent_slug|length > 0 %}
+  <a href="{% url 'list.subpages' parent_slug=parent_slug %}"><i class="fas fa-backward"></i> llistat de subpàgines</a>
+  {% else %}
+  <a href="{% url 'list.pages' %}"><i class="fas fa-backward"></i> llistat de pàgines</a>
+  {% endif %}
+  <br><br>
+{% else %}
+  {% if parent_slug|length > 0 %}
+  <a href="{% url 'list.pages' %}"><i class="fas fa-backward"></i> llistat de pàgines</a>
+  <br><br>
+  {% endif %}
 {% endif %}
 
 <table class="table table-bordred table-striped">
@@ -15,22 +23,40 @@
       <th>Titol</th>
       <th>Estat</th>
       <th></th>
+      <th>blog post</th>
     </tr>
   </thead>
   <tbody>
     {% for page in list_pages %}
       <tr>
-        {% if parent_slug|length > 0 %}
-        <td><a href="{% url 'edit.subpage' parent_slug=parent_slug page_slug=page.slug %}">{{ page.title }}</a></td>
+        {% if page.is_post %}
+          <!-- edit blog post -->
+          <td><a href="{% url 'edit.post' post_id=page.id post_slug=page.slug %}">{{ page.title }}</a></td>
         {% else %}
+          <!-- edit page -->
+          {% if parent_slug|length > 0 %}
+        <td><a href="{% url 'edit.subpage' parent_slug=parent_slug page_slug=page.slug %}">{{ page.title }}</a></td>
+          {% else %}
         <td><a href="{% url 'edit.page' page_slug=page.slug %}">{{ page.title }}</a></td>
+          {% endif %}
         {% endif %}
+
         <td>{{ page.get_status_display }}</td>
-        {% if page.children_pages.count > 0 %}
+        
+        {% if not page.is_post %}
+          {% if page.parent %}
+        <td><a href="{% url 'list.subpage.posts' parent_slug=parent_slug page_slug=page.slug %}"><i class="fas fa-list"></i> subpàgines</a></td>
+          {% else %}
         <td><a href="{% url 'list.subpages' parent_slug=page.slug %}"><i class="fas fa-list"></i> subpàgines</a></td>
+          {% endif %}
         {% else %}
         <td></td>
         {% endif %}
+
+        <td>
+          {{ page.is_post|yesno:"<p style=\"color:green\"><i class=\"fas fa-check\"></i></p>,<p></p>" | safe }}
+        </td>
+        
       </tr>
     {% endfor %}
   </tbody>
@@ -61,12 +87,21 @@
 </ul>
 {% endif %}
 
-{% if parent_slug|length > 0 %}
-<form style="display: inline;" action="{% url 'add.subpage' parent_slug=parent_slug %}" method="GET">
-{% else %}
-<form style="display: inline;" action="{% url 'add.page' %}" method="GET">
+{% if not page_posts %}
+  {% if parent_slug|length > 0 %}
+  <form style="display: inline;" action="{% url 'add.subpage' parent_slug=parent_slug %}" method="GET">
+  {% else %}
+  <form style="display: inline;" action="{% url 'add.page' %}" method="GET">
+  {% endif %}
+    <button class="float-left btn btn-info" style="margin: 3px;" type="submit"><i class="fas fa-plus"></i> pàgina</button>
+  </form>
 {% endif %}
-<button class="float-left btn btn-info" style="margin: 3px;" type="submit"><i class="fas fa-plus"></i> pàgina</button>
-</form>
+
+{% if parent_slug|length > 0 %}
+  <form style="display: inline;" action="{% url 'add.page.post' page_slug=parent_slug %}" method="GET">
+  <button class="float-left btn btn-info" style="margin: 3px;" type="submit"><i class="fas fa-plus"></i> post</button>
+  </form>
+{% endif %}
+
 
 {% endblock %}

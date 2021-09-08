@@ -11,6 +11,7 @@ from django.db.models import Q
 from www.models import *
 from www.forms import *
 
+import datetime
 import time
 import sys
 import os
@@ -55,11 +56,11 @@ def robots_txt(request):
   return HttpResponse("\n".join(lines), content_type="text/plain")
 
 def get_main_nav():
-  list_root_pages = Page.objects.filter(is_blog=False, parent=None, status=PAGE_STATUS_PUBLIC).filter(~Q(slug=settings.ROOT_PAGE_SLUG))
+  list_root_pages = Page.objects.filter(is_post=False, parent=None, status=PAGE_STATUS_PUBLIC).filter(~Q(slug=settings.ROOT_PAGE_SLUG))
 
   nav = {}
   for page in list_root_pages:
-    nav[page.title] = page.slug
+    nav[page.title] = page.getURL()
 
   return nav
 
@@ -67,13 +68,16 @@ def get_main_nav():
 # vistes
 #
 
-def view_page_by_slug(request, parent_slug=None, page_slug=None):
+def view_page_by_slug(request, parent_slug=None, page_slug=None, post_slug=None):
   if os.getenv('DEBUG', False):
     print('view_page_by_slug '+str(parent_slug)+' '+str(page_slug))
   if parent_slug:
     url = parent_slug+'/'+page_slug
   else:
     url = page_slug
+
+  if post_slug:
+    url += '/' + post_slug
 
   return view_page(request, url)
 
@@ -83,19 +87,41 @@ def view_page(request, url=None):
   parent_slug=None
   if not url:
     page_slug=settings.ROOT_PAGE_SLUG
+    post_slug = None
+    parent_slug = None
   else:
     if '/' in url:
       components = url.split('/')
       parent_slug = components[0]
       page_slug = components[1]
+      try:
+        post_slug = components[2]
+      except:
+        post_slug = None
     else:
-      page_slug=url
+      page_slug = url
+      post_slug = None
+      parent_slug = None
   
-  page_instance = Page.objects.filter(is_blog=False, parent__slug=parent_slug, slug=page_slug, status=PAGE_STATUS_PUBLIC).first()
+  if os.getenv('DEBUG', False):
+    print(str(parent_slug))
+    print(str(page_slug))
+    print(str(post_slug))
+
+  if post_slug:
+    parent_page = Page.objects.filter(parent__slug=parent_slug, slug=page_slug, status=PAGE_STATUS_PUBLIC).first()
+    page_instance = Page.objects.filter(parent=parent_page, slug=page_slug).first()
+  else:
+    page_instance = Page.objects.filter(parent__slug=parent_slug, slug=page_slug, status=PAGE_STATUS_PUBLIC).first()
+    if not page_instance:
+      post_slug = page_slug
+      page_slug = None
+      parent_page = Page.objects.filter(slug=parent_slug, status=PAGE_STATUS_PUBLIC).first()
+      page_instance = Page.objects.filter(parent=parent_page, slug=page_slug).first()
 
   if not page_instance:
-    # TODO: blog URL
-    raise Http404("Aquesta pàgina no existeix")
+    print()
+    raise Http404("Aquesta URL no existeix")
 
   attachments = {}
   for attachment in page_instance.attachments.all():
@@ -120,17 +146,36 @@ def view_page(request, url=None):
 
   if current_subpage:
     for page in nav_obj.children_pages.all():
-      print(page.title)
       if page.status == PAGE_STATUS_PUBLIC:
         internal_nav[page.title] = page.getURL()
 
-  return render(request, 'pages/view.html', { 
-                                              'page': page_instance,
-                                              'root_nav': get_main_nav(),
-                                              'internal_nav': internal_nav,
-                                              'current_page': current_subpage,
-                                              'attachments': attachments
-                                            })
+  list_posts_raw = Page.objects.filter(is_post=True, parent=page_instance).order_by('-post_date')
+
+  page = request.GET.get('page', 1)
+  paginator = Paginator(list_posts_raw, 10)
+  try:
+      list_posts = paginator.page(page)
+  except PageNotAnInteger:
+      list_posts = paginator.page(1)
+  except EmptyPage:
+      list_posts = paginator.page(paginator.num_pages)
+
+  if page_instance.is_post:
+    return render(request, 'pages/view.html', { 
+                                            'page': page_instance,
+                                            'root_nav': get_main_nav(),
+                                            'attachments': attachments,
+                                            'list_posts': list_posts
+                                          })
+  else:
+    return render(request, 'pages/view.html', { 
+                                                'page': page_instance,
+                                                'root_nav': get_main_nav(),
+                                                'internal_nav': internal_nav,
+                                                'current_page': current_subpage,
+                                                'attachments': attachments,
+                                                'list_posts': list_posts
+                                              })
 
 @login_required
 def home_admin(request, url=None):
@@ -145,9 +190,9 @@ def edit_page(request, parent_slug=None, page_slug=None):
   attachments = {}
   try:
     if parent_slug:
-      parent_instance = Page.objects.filter(is_blog=False, slug=parent_slug).first()
+      parent_instance = Page.objects.filter(is_post=False, slug=parent_slug).first()
     try:
-      page_instance = Page.objects.filter(is_blog=False, parent__slug=parent_slug, slug=page_slug).first()
+      page_instance = Page.objects.filter(is_post=False, parent__slug=parent_slug, slug=page_slug).first()
       for attachment in page_instance.attachments.all():
         if attachment.name:
           attachments[attachment.name] = attachment.static_url
@@ -155,9 +200,9 @@ def edit_page(request, parent_slug=None, page_slug=None):
           attachments[attachment.filename] = attachment.static_url
     except:
       if parent_slug:
-        page_instance = Page(parent=parent_instance)
+        page_instance = Page(is_post=False, parent=parent_instance)
       else:
-        page_instance = Page()
+        page_instance = Page(is_post=False)
 
     if request.method == 'POST':
       form = PageForm(request.POST, instance=page_instance)
@@ -209,12 +254,15 @@ def edit_page(request, parent_slug=None, page_slug=None):
       return redirect('list.pages')
 
 @login_required
-def delete_page(request, parent_slug=None, page_slug=None):
+def delete_page(request, parent_slug=None, page_slug=None, page_id=None):
   try:
-    if parent_slug:
-      page_instance = Page.objects.filter(is_blog=False, parent__slug=parent_slug, slug=page_slug).first()
+    if page_id:
+      page_instance = Page.objects.filter(id=page_id, slug=page_slug).first()
     else:
-      page_instance = Page.objects.filter(is_blog=False, slug=page_slug).first()
+      if parent_slug:
+        page_instance = Page.objects.filter(is_post=False, parent__slug=parent_slug, slug=page_slug).first()
+      else:
+        page_instance = Page.objects.filter(is_post=False, slug=page_slug).first()
 
     if request.method == 'POST':
       form = AreYouSureForm(request.POST)
@@ -254,9 +302,9 @@ def delete_page(request, parent_slug=None, page_slug=None):
 def list_pages(request, parent_slug=None):
 
   if parent_slug:
-    list_pages_raw = Page.objects.filter(is_blog=False, parent__slug=parent_slug)
+    list_pages_raw = Page.objects.filter(parent__slug=parent_slug)
   else:
-    list_pages_raw = Page.objects.filter(is_blog=False, parent=None)
+    list_pages_raw = Page.objects.filter(parent=None)
 
   page = request.GET.get('page', 1)
   paginator = Paginator(list_pages_raw, 10)
@@ -269,7 +317,8 @@ def list_pages(request, parent_slug=None):
 
   return render(request, 'pages/list.html', {
                                               'list_pages': list_pages,
-                                              'parent_slug': parent_slug
+                                              'page_posts': False,
+                                              'parent_slug': parent_slug,
                                             })
 
 #
@@ -313,9 +362,13 @@ def remove_page_attachment(request, attachment_id=None):
 
 
 @login_required
-def page_attachments(request, parent_slug=None, page_slug=None):
+def page_attachments(request, parent_slug=None, page_slug=None, post_slug=None):
   try:
-    page_instance = Page.objects.filter(is_blog=False, parent__slug=parent_slug, slug=page_slug).first()
+    if post_slug:
+      parent_page_instance = Page.objects.filter(is_post=False, parent__slug=parent_slug, slug=page_slug).first()
+      page_instance = Page.objects.filter(is_post=True, parent=parent_page_instance).first()
+    else:
+      page_instance = Page.objects.filter(is_post=False, parent__slug=parent_slug, slug=page_slug).first()
 
     attachments = {}
     for attachment in page_instance.attachments.all():
@@ -349,3 +402,106 @@ def page_attachments(request, parent_slug=None, page_slug=None):
     return redirect('edit.subpage', parent_slug=parent_slug, page_slug=page_slug)
   else:
     return redirect('edit.page', page_slug=page_slug)
+
+#
+# posts
+#
+
+@login_required
+def edit_post(request, parent_slug=None, page_slug=None, post_slug=None, post_id=None):
+  attachments = {}
+  if not post_id:
+    parent_page = Page.objects.filter(is_post=False, parent__slug=parent_slug, slug=page_slug).first()
+
+    if not parent_page:
+      raise Http404("Aquesta pàgina no existeix")
+  
+  try:
+    if post_id:
+      # editar existent
+      post_instance = Page.objects.filter(is_post=True, slug=post_slug, id=post_id).first()
+      parent_page = post_instance.parent
+
+      for attachment in post_instance.attachments.all():
+        if attachment.name:
+          attachments[attachment.name] = attachment.static_url
+        else:
+          attachments[attachment.filename] = attachment.static_url
+    else:
+      # nou post
+      post_instance = Page(is_post=True, parent=parent_page, post_date=datetime.datetime.now())
+
+    if request.method == 'POST':
+      form = BlogForm(request.POST, instance=post_instance)
+      if form.is_valid():
+        post_instance = form.save(commit=False)
+        if parent_slug:
+          post_instance.parent = parent_page
+        post_instance.is_post = True
+        post_instance.save()
+
+        try:
+          boto_apretat = str(form.data['guardar'])
+          messages.info(request, 'Pàgina guardada correctament')
+          return redirect('list.subpages', parent_slug=post_instance.parent.slug)
+        except:
+          if parent_slug:
+            return redirect('subpage.post.attachments', parent_slug=parent_slug, page_slug=page_slug)
+          else:
+            return redirect('page.post.attachments', page_slug=page_slug)
+
+
+      else:
+        messages.error(request, 'Formulari incorrecte')
+        return render(request, 'pages/edit.html', { 
+                                                    'form': form, 
+                                                    'page': post_instance, 
+                                                    'parent_slug': parent_slug,
+                                                    'page_slug': page_slug,
+                                                    'attachments': attachments
+                                                })
+    else:
+      form = BlogForm(instance=post_instance)
+      return render(request, 'pages/edit.html', { 
+                                                  'form': form, 
+                                                  'page': post_instance, 
+                                                  'parent_slug': parent_slug,
+                                                  'page_slug': page_slug,
+                                                  'attachments': attachments
+                                                })
+
+  except Exception as e:
+    if os.getenv('DEBUG', False):
+      print(str(e))
+    if request.user.is_superuser:
+      messages.error(request, str(e))
+    if parent_slug:
+      return redirect('list.subpages', parent_slug=parent_slug)
+    else:
+      return redirect('list.pages')
+
+@login_required
+def list_posts(request, parent_slug=None, page_slug=None):
+
+  parent_page = Page.objects.filter(is_post=False, parent__slug=parent_slug, slug=page_slug).first()
+
+  if not parent_page:
+    raise Http404("Aquesta pàgina no existeix")
+
+  list_posts_raw = Page.objects.filter(is_post=True, parent=parent_page)
+
+  page = request.GET.get('page', 1)
+  paginator = Paginator(list_posts_raw, 10)
+  try:
+      list_posts = paginator.page(page)
+  except PageNotAnInteger:
+      list_posts = paginator.page(1)
+  except EmptyPage:
+      list_posts = paginator.page(paginator.num_pages)
+
+  return render(request, 'pages/list.html', {
+                                              'list_pages': list_posts,
+                                              'page_posts': True,
+                                              'parent_slug': parent_slug,
+                                              'page_slug': page_slug
+                                            })

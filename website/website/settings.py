@@ -84,12 +84,25 @@ WSGI_APPLICATION = 'website.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
+# sqlite
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': os.getenv('SQLITE_DB_PATH', BASE_DIR) / 'db.sqlite3',
     }
 }
+
+# DATABASES = {
+#     'default':
+#     {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         'NAME': os.getenv('DB_NAME', 'ampa'),
+#         'USER': os.getenv('DB_USER', 'ampa'),
+#         'PASSWORD': os.getenv('DB_PASSWORD', 'sha1'),
+#         'HOST': os.getenv('DB_HOST', '127.0.0.1'),
+#         'PORT': os.getenv('DB_PORT', '5432'),
+#     }
+# }
 
 
 # Password validation
@@ -144,6 +157,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = str(__file__)+'/static'
+STATIC_ROOT = str(BASE_DIR)+'/static'
 
 ROOT_PAGE_SLUG = os.getenv('ROOT_PAGE_SLUG', 'ampa')
