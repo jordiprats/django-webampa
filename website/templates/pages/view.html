@@ -30,11 +30,11 @@
 {% if page.show_blog %}
   <ul>
   {% for post in list_posts %}
-  <li>
+  <li style="margin-top: 30px;">
     <h2><a style="color: black; text-decoration: none;" href="{{ post.getURL }}">{{ post.title }}</a></h2>
     <p class="text-secondary">{{ post.post_date | date:"d/m/Y" | lower }}</p>
 
-    {{ post.html_message | truncatewords_html:15 | safe}} <a href="{{ post.getURL }}">Continuar llegint...</a>
+    {{ post.html_message | truncatewords_html:50 | safe}} <a href="{{ post.getURL }}">Continuar llegint...</a>
   </li>
   {% endfor %}
   </ul>

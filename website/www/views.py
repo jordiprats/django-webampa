@@ -110,7 +110,7 @@ def view_page(request, url=None):
 
   if post_slug:
     parent_page = Page.objects.filter(parent__slug=parent_slug, slug=page_slug, status=PAGE_STATUS_PUBLIC).first()
-    page_instance = Page.objects.filter(parent=parent_page, slug=page_slug).first()
+    page_instance = Page.objects.filter(parent=parent_page, slug=post_slug).first()
   else:
     page_instance = Page.objects.filter(parent__slug=parent_slug, slug=page_slug, status=PAGE_STATUS_PUBLIC).first()
     if not page_instance:
@@ -131,7 +131,7 @@ def view_page(request, url=None):
       attachments[attachment.filename] = attachment.static_url
 
   internal_nav = {}
-  if page_instance.children_pages.count() > 0:
+  if page_instance.children_pages.filter(is_post=False, status=PAGE_STATUS_PUBLIC).count() > 0:
     nav_obj = page_instance
     current_subpage = page_instance.title
     internal_nav[page_instance.title] = page_instance.getURL()
@@ -145,11 +145,14 @@ def view_page(request, url=None):
       current_subpage = None
 
   if current_subpage:
-    for page in nav_obj.children_pages.all():
-      if page.status == PAGE_STATUS_PUBLIC:
-        internal_nav[page.title] = page.getURL()
+    for page in nav_obj.children_pages.filter(is_post=False, status=PAGE_STATUS_PUBLIC).all():
+      internal_nav[page.title] = page.getURL()
+  
+  if internal_nav:
+    if len(internal_nav) == 1:
+      internal_nav = {}
 
-  list_posts_raw = Page.objects.filter(is_post=True, parent=page_instance).order_by('-post_date')
+  list_posts_raw = Page.objects.filter(is_post=True, parent=page_instance, status=PAGE_STATUS_PUBLIC).order_by('-post_date')
 
   page = request.GET.get('page', 1)
   paginator = Paginator(list_posts_raw, 10)

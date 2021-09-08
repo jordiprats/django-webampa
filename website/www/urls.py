@@ -57,6 +57,7 @@ urlpatterns = [
 
   path('<page_slug>', views.view_page_by_slug, name='view.page.by.slug'),
   path('<parent_slug>/<page_slug>', views.view_page_by_slug, name='view.subpage.by.slug'),
+  path('<parent_slug>/<page_slug>/<post_slug>', views.view_page_by_slug, name='view.subpage.by.slug'),
   #path('<url>', views.view_page, name='view.page'),
   path('', views.view_page, name='view.page'),
 ]

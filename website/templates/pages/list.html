@@ -98,10 +98,16 @@
 {% endif %}
 
 {% if parent_slug|length > 0 %}
-  <form style="display: inline;" action="{% url 'add.page.post' page_slug=parent_slug %}" method="GET">
-  <button class="float-left btn btn-info" style="margin: 3px;" type="submit"><i class="fas fa-plus"></i> post</button>
-  </form>
+  {% if page_slug|length > 0 %}
+    <form style="display: inline;" action="{% url 'add.subpage.post' parent_slug=parent_slug page_slug=page_slug %}" method="GET">
+  {% else %}
+    <form style="display: inline;" action="{% url 'add.page.post' page_slug=parent_slug %}" method="GET">
+  {% endif %}
+      <button class="float-left btn btn-info" style="margin: 3px;" type="submit"><i class="fas fa-plus"></i> post</button>
+    </form>
 {% endif %}
+
+
 
 
 {% endblock %}

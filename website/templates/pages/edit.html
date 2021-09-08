@@ -57,7 +57,7 @@ tinymce.init({
     {% if parent_slug|length == 0 %}
     <form style="display: inline;" action="{% url 'add.page.post' page_slug=page.slug %}" method="GET">
     {% else %}
-    <form style="display: inline;" action="{% url 'add.subpage.post' parent_slug=parent_slug page_slug=page.slug %}" method="GET"></form>
+    <form style="display: inline;" action="{% url 'add.subpage.post' parent_slug=parent_slug page_slug=page.slug %}" method="GET">
     {% endif %}
       <button style="margin-right: 10px;" class="float-right btn btn-primary" type="submit"><i class="fas fa-plus"></i> post</button>
     </form>
